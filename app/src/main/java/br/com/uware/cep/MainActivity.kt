@@ -3,9 +3,11 @@ package br.com.uware.cep
 import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
@@ -31,6 +33,7 @@ class MainActivity : AppCompatActivity() {
     }
     fun getCep(cep: String){
         val url= "https://viacep.com.br/ws/"+cep+"/json/"
+        tvResp.visibility = View.INVISIBLE
         MyAsyncTask().execute(url)
     }
     object MaskEditUtil {
@@ -74,7 +77,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
     inner class MyAsyncTask: AsyncTask<String, String, String>() {
-        override fun onPreExecute() {}
+        override fun onPreExecute() {
+            pbCep.visibility = View.VISIBLE
+        }
         override fun doInBackground(vararg params: String?): String {
             try {
                 val url = URL(params[0])
@@ -95,6 +100,8 @@ class MainActivity : AppCompatActivity() {
                 val bairro = json.getString("bairro")
                 val cidade = json.getString("localidade")
                 val estado = json.getString("uf")
+                pbCep.visibility = View.INVISIBLE
+                tvResp.visibility = View.VISIBLE
                 tvResp.text =
                     "Dados\ncep: " + cep + "\nRua: " + logradouro + "\nBairro: " + bairro + "\nCidade: " + cidade + "\nEstado: " + estado
             } catch (ex: Exception) {
