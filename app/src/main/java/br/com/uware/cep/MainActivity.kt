@@ -1,5 +1,6 @@
 package br.com.uware.cep
 
+import android.content.Context
 import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -8,9 +9,12 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
+import br.com.uware.cep.functions.Anime
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_main.view.*
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStream
@@ -18,6 +22,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class MainActivity : AppCompatActivity() {
+    val anime = Anime()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -29,11 +34,12 @@ class MainActivity : AppCompatActivity() {
             else{
                 getCep(etCEP.text.toString())
             }
+            it.hideKeyboard()
         }
     }
     fun getCep(cep: String){
         val url= "https://viacep.com.br/ws/"+cep+"/json/"
-        tvResp.visibility = View.INVISIBLE
+        anime.tradeView(tvResp, pbCep)
         MyAsyncTask().execute(url)
     }
     object MaskEditUtil {
@@ -71,14 +77,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
         fun unmask(s: String): String {
-            return s.replace("[.]".toRegex(), "").replace("[-]".toRegex(), "")
-                .replace("[/]".toRegex(), "").replace("[(]".toRegex(), ""
-                ).replace("[ ]".toRegex(), "").replace("[:]".toRegex(), "").replace("[)]".toRegex(), "")
+            return s.replace("[-]".toRegex(), "")
         }
     }
     inner class MyAsyncTask: AsyncTask<String, String, String>() {
         override fun onPreExecute() {
-            pbCep.visibility = View.VISIBLE
         }
         override fun doInBackground(vararg params: String?): String {
             try {
@@ -100,8 +103,7 @@ class MainActivity : AppCompatActivity() {
                 val bairro = json.getString("bairro")
                 val cidade = json.getString("localidade")
                 val estado = json.getString("uf")
-                pbCep.visibility = View.INVISIBLE
-                tvResp.visibility = View.VISIBLE
+                anime.tradeView(pbCep,tvResp)
                 tvResp.text =
                     "Dados\ncep: " + cep + "\nRua: " + logradouro + "\nBairro: " + bairro + "\nCidade: " + cidade + "\nEstado: " + estado
             } catch (ex: Exception) {
@@ -112,15 +114,19 @@ class MainActivity : AppCompatActivity() {
             val reader = BufferedReader(inputStream.reader())
             val content = StringBuilder()
             var line = reader.readLine()
-            try {
+            reader.use { reader ->
                 while (line != null) {
                     content.append(line)
                     line = reader.readLine()
                 }
-            } finally {
-                reader.close()
             }
             return content.toString()
         }
+    }
+
+    // Hide Keyboard
+    fun View.hideKeyboard() {
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(windowToken, 0)
     }
 }
